@@ -11,7 +11,6 @@ import android.provider.Settings
 import android.util.Log
 import android.view.MenuItem
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -29,36 +28,43 @@ private const val TAG = "RemindersActivity"
 class RemindersActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRemindersBinding
-    private lateinit var requestForegroundPermissionLauncher: ActivityResultLauncher<String>
-    private lateinit var requestBackgroundPermissionLauncher: ActivityResultLauncher<String>
     private val runningQOrLater = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityRemindersBinding.inflate(layoutInflater)
-
-        requestForegroundPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
+    private val requestForegroundLocationPermissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
                 Log.d(TAG, "Foreground Permission Granted")
                 requestBackgroundLocationPermissions()
-            } else {
+            }
+
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                Log.d(TAG, "Foreground Permission Granted")
+                requestBackgroundLocationPermissions()
+            }
+
+            else -> {
                 Log.d(TAG, "Foreground Permission Denied")
                 showPermissionDeniedSnackbar()
             }
         }
+    }
 
-        requestBackgroundPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                Log.d(TAG, "Background Permission Granted")
-            } else {
-                Log.d(TAG, "Background Permission Denied")
-                showPermissionDeniedSnackbar()
-            }
+    private val requestBackgroundLocationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.d(TAG, "Background Permission Granted")
+        } else {
+            Log.d(TAG, "Background Permission Denied")
+            showPermissionDeniedSnackbar()
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityRemindersBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
     }
@@ -99,15 +105,23 @@ class RemindersActivity : AppCompatActivity() {
             Log.d(TAG, "Permissions approved")
             return
         }
-        requestForegroundLocationPermissions()
+        if (checkForegroundLocationApproved()) {
+            requestBackgroundLocationPermissions()
+        } else {
+            requestForegroundLocationPermissions()
+        }
     }
 
     private fun requestForegroundLocationPermissions() {
         if (checkForegroundLocationApproved()) {
-            requestBackgroundLocationPermissions()
             return
         }
-        requestForegroundPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        requestForegroundLocationPermissionsLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
     }
 
     @TargetApi(29)
@@ -117,7 +131,7 @@ class RemindersActivity : AppCompatActivity() {
         }
         Toast.makeText(this, getString(R.string.location_permission_note), Toast.LENGTH_SHORT)
             .show()
-        requestBackgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        requestBackgroundLocationPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
     @TargetApi(29)
@@ -131,8 +145,9 @@ class RemindersActivity : AppCompatActivity() {
     }
 
     private fun checkForegroundLocationApproved(): Boolean {
-        return (
-                PackageManager.PERMISSION_GRANTED == ActivityCompat
-                    .checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION))
+        return (PackageManager.PERMISSION_GRANTED == ActivityCompat
+            .checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                || PackageManager.PERMISSION_GRANTED == ActivityCompat
+            .checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
 }
