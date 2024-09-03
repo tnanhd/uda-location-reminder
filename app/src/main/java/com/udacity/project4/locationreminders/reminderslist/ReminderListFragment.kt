@@ -1,9 +1,14 @@
 package com.udacity.project4.locationreminders.reminderslist
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.*
+import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Lifecycle
+import com.firebase.ui.auth.AuthUI
 import com.udacity.project4.R
+import com.udacity.project4.authentication.AuthenticationActivity
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentRemindersBinding
@@ -22,12 +27,12 @@ class ReminderListFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = DataBindingUtil.inflate(inflater,
+        binding = DataBindingUtil.inflate(
+            inflater,
             R.layout.fragment_reminders, container, false
         )
         binding.viewModel = _viewModel
 
-        setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(false)
         setTitle(getString(R.string.app_name))
         binding.refreshLayout.setOnRefreshListener { _viewModel.loadReminders() }
@@ -37,10 +42,15 @@ class ReminderListFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
+
         setupRecyclerView()
+
         binding.addReminderFAB.setOnClickListener {
             navigateToAddReminder()
         }
+
+        setupOptionsMenu()
+
     }
 
     override fun onResume() {
@@ -56,24 +66,33 @@ class ReminderListFragment : BaseFragment() {
         )
     }
 
+    private fun setupOptionsMenu() {
+        val menuProvider = object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.main_menu, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.logout -> {
+                        AuthUI.getInstance().signOut(requireContext())
+                        val intent = Intent(requireActivity(), AuthenticationActivity::class.java)
+                        requireActivity().startActivity(intent)
+                        requireActivity().finish()
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+        }
+        requireActivity().addMenuProvider(menuProvider, viewLifecycleOwner, Lifecycle.State.RESUMED)
+    }
+
     private fun setupRecyclerView() {
         val adapter = RemindersListAdapter {}
         // Setup the recycler view using the extension function
         binding.reminderssRecyclerView.setup(adapter)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.logout -> {
-                // TODO: add the logout implementation
-            }
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        // Display logout as menu item
-        inflater.inflate(R.menu.main_menu, menu)
-    }
 }
