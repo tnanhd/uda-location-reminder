@@ -154,6 +154,10 @@ class SaveReminderFragment : BaseFragment() {
         val longitude = _viewModel.longitude.value
         val reminder = ReminderDataItem(title, description, location, latitude, longitude)
 
+        if (!_viewModel.validateEnteredData(reminder)) {
+            return
+        }
+
         val geofence = Geofence.Builder()
             .setRequestId(reminder.id)
             .setCircularRegion(
