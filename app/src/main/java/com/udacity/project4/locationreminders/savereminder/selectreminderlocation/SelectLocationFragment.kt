@@ -1,12 +1,18 @@
 package com.udacity.project4.locationreminders.savereminder.selectreminderlocation
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.view.MenuProvider
@@ -30,7 +36,6 @@ import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
-import java.util.Locale
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
@@ -69,6 +74,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setupOptionsMenu()
     }
 
+    @SuppressLint("MissingPermission")
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         map.uiSettings.isZoomControlsEnabled = true

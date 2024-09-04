@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
@@ -17,17 +16,68 @@
         android:orientation="vertical"
         tools:context=".locationreminders.ReminderDescriptionActivity">
 
-        <!-- TODO: Add the design of the reminder details -->
-
         <TextView
-            android:layout_width="match_parent"
+            android:id="@+id/reminderTitleLabel"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="Reminder Details"
+            android:text="@string/reminder_title"
             android:textSize="@dimen/text_size_large"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/reminderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@{reminderDataItem.title}"
+            android:textSize="@dimen/text_size_medium"
+            tools:text="Go to this zoo" />
+
+        <TextView
+            android:id="@+id/reminderDescriptionLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/reminder_desc"
+            android:textSize="@dimen/text_size_large"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/reminderDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@{reminderDataItem.description}"
+            android:textSize="@dimen/text_size_medium"
+            tools:text="Go to this zoo on May" />
+
+        <TextView
+            android:id="@+id/locationLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/reminder_location"
+            android:textSize="@dimen/text_size_large"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@{reminderDataItem.location}"
+            android:textSize="@dimen/text_size_medium"
+            tools:text="Zoo Madagascar" />
+
+        <TextView
+            android:id="@+id/coordinate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@{@string/lat_long_snippet(reminderDataItem.latitude, reminderDataItem.longitude)}"
+            android:textSize="@dimen/text_size_medium"
+            tools:text="Lat: -15.0, Long: 28.0" />
+
     </LinearLayout>
 </layout>
