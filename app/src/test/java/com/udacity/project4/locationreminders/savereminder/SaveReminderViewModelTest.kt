@@ -7,10 +7,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.udacity.project4.R
 import com.udacity.project4.locationreminders.MainDispatcherRule
+import com.udacity.project4.locationreminders.createReminderDataItem
 import com.udacity.project4.locationreminders.data.FakeDataSource
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.getOrAwaitValue
-import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -57,7 +57,7 @@ class SaveReminderViewModelTest {
     fun validateAndSaveReminder_withEmptyTitle_shouldReturnError() {
         // When
         viewModel.validateAndSaveReminder(
-            createReminder(emptyField = "title")
+            createReminderDataItem(emptyField = "title")
         )
         // Then
         assertThat(viewModel.showSnackBarInt.getOrAwaitValue()).isEqualTo(R.string.err_enter_title)
@@ -67,7 +67,7 @@ class SaveReminderViewModelTest {
     fun validateAndSaveReminder_withEmptyLocation_shouldReturnError() {
         // When
         viewModel.validateAndSaveReminder(
-            createReminder(emptyField = "location")
+            createReminderDataItem(emptyField = "location")
         )
         // Then
         assertThat(viewModel.showSnackBarInt.getOrAwaitValue()).isEqualTo(R.string.err_select_location)
@@ -77,7 +77,7 @@ class SaveReminderViewModelTest {
     fun validateAndSaveReminder_withValidData_shouldReturnSuccess() {
         // When
         viewModel.validateAndSaveReminder(
-            createReminder()
+            createReminderDataItem()
         )
         // Then
         assertThat(viewModel.showToast.getOrAwaitValue()).isEqualTo(application.getString(R.string.reminder_saved))
@@ -87,31 +87,10 @@ class SaveReminderViewModelTest {
     fun validateAndSaveReminder_withValidData_shouldShowLoading() = runTest {
         Dispatchers.setMain(StandardTestDispatcher())
         viewModel.validateAndSaveReminder(
-            createReminder()
+            createReminderDataItem()
         )
         assertThat(viewModel.showLoading.getOrAwaitValue()).isTrue()
         advanceUntilIdle()
         assertThat(viewModel.showLoading.getOrAwaitValue()).isFalse()
-    }
-
-
-    private fun createReminder(emptyField: String = "") = ReminderDataItem(
-        "title",
-        "description",
-        "location",
-        0.0,
-        0.0
-    ).apply {
-        when (emptyField) {
-            "title" -> {
-                title = ""
-            }
-
-            "location" -> {
-                location = ""
-            }
-
-            else -> {}
-        }
     }
 }
