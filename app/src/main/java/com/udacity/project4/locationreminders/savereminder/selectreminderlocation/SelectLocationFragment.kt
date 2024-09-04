@@ -112,20 +112,21 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setMapStyle(map)
 
         _viewModel.selectedPOI.observe(viewLifecycleOwner) { poi ->
-            _viewModel.latitude.value = poi.latLng.latitude
-            _viewModel.longitude.value = poi.latLng.longitude
-            _viewModel.reminderSelectedLocationStr.value = poi.name
+            poi?.latLng?.let {
+                _viewModel.latitude.value = poi.latLng.latitude
+                _viewModel.longitude.value = poi.latLng.longitude
+                _viewModel.reminderSelectedLocationStr.value = poi.name
 
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(poi.latLng, 15f))
-
-            selectedMarker?.remove()
-            selectedMarker = map.addMarker(
-                MarkerOptions()
-                    .position(poi.latLng)
-                    .title(poi.name)
-            )
-            if ("" !== selectedMarker!!.title) {
-                selectedMarker?.showInfoWindow()
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(poi.latLng, 15f))
+                selectedMarker?.remove()
+                selectedMarker = map.addMarker(
+                    MarkerOptions()
+                        .position(poi.latLng)
+                        .title(poi.name)
+                )
+                if ("" !== selectedMarker!!.title) {
+                    selectedMarker?.showInfoWindow()
+                }
             }
         }
     }
