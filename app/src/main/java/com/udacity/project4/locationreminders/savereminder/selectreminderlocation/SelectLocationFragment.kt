@@ -1,15 +1,18 @@
 package com.udacity.project4.locationreminders.savereminder.selectreminderlocation
 
 import android.Manifest
+import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Lifecycle
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -18,7 +21,9 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PointOfInterest
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
@@ -36,6 +41,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
+    private var selectedMarker: Marker? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -47,7 +54,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         setDisplayHomeAsUpEnabled(true)
 
-        // TODO: add the map setup implementation
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.mapFragmentContainer) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -55,8 +61,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         fusedLocationProviderClient =
             LocationServices.getFusedLocationProviderClient(requireActivity())
 
-        // TODO: call this function after the user confirms on the selected location
-        onLocationSelected()
         return binding.root
     }
 
@@ -69,57 +73,60 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         map = googleMap
         map.uiSettings.isZoomControlsEnabled = true
 
-        getCurrentUserLocation(map)
 
-        setMapLongClick(map)
-        setPoiClick(map)
-        setMapStyle(map)
-    }
-
-    private fun getCurrentUserLocation(map: GoogleMap) {
         if (!checkLocationPermissionsApproved()) {
             return
         }
 
         map.isMyLocationEnabled = true
+        map.uiSettings.isMyLocationButtonEnabled = true
+
         fusedLocationProviderClient.lastLocation
             .addOnSuccessListener { location ->
                 location?.let {
                     val currentLatLng = LatLng(location.latitude, location.longitude)
-                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
-                    map.addMarker(MarkerOptions().position(currentLatLng))
+                    val poi = PointOfInterest(
+                        currentLatLng,
+                        "",
+                        ""
+                    )
+                    _viewModel.selectedPOI.value = poi
                 }
             }
             .addOnFailureListener {
                 Log.e(TAG, "Failed to get user location")
             }
-    }
 
-    private fun setMapLongClick(map: GoogleMap) {
         map.setOnMapLongClickListener { latLng ->
-            val snippet = String.format(
-                Locale.getDefault(),
-                "Lat: %1$.5f, Long: %2$.5f",
-                latLng.latitude,
-                latLng.longitude
-            )
-            map.addMarker(
-                MarkerOptions()
-                    .position(latLng)
-                    .title(getString(R.string.dropped_pin))
-                    .snippet(snippet)
-            )
+            val poiName = getString(R.string.dropped_pin)
+            val poi = PointOfInterest(latLng, poiName, poiName)
+            _viewModel.selectedPOI.value = poi
+            onLocationSelected()
         }
-    }
 
-    private fun setPoiClick(map: GoogleMap) {
         map.setOnPoiClickListener { poi ->
-            val poiMarker = map.addMarker(
+            _viewModel.selectedPOI.value = poi
+            onLocationSelected()
+        }
+
+        setMapStyle(map)
+
+        _viewModel.selectedPOI.observe(viewLifecycleOwner) { poi ->
+            _viewModel.latitude.value = poi.latLng.latitude
+            _viewModel.longitude.value = poi.latLng.longitude
+            _viewModel.reminderSelectedLocationStr.value = poi.name
+
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(poi.latLng, 15f))
+
+            selectedMarker?.remove()
+            selectedMarker = map.addMarker(
                 MarkerOptions()
                     .position(poi.latLng)
                     .title(poi.name)
             )
-            poiMarker?.showInfoWindow()
+            if ("" !== selectedMarker!!.title) {
+                selectedMarker?.showInfoWindow()
+            }
         }
     }
 
@@ -141,9 +148,21 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     private fun onLocationSelected() {
-        // TODO: When the user confirms on the selected location,
-        //  send back the selected location details to the view model
-        //  and navigate back to the previous fragment to save the reminder and add the geofence
+        AlertDialog.Builder(requireContext()).apply {
+            setTitle("Confirmation")
+            setMessage("Are you sure you want to proceed with ${_viewModel.selectedPOI.value?.name}?")
+
+            setPositiveButton("Yes") { dialog: DialogInterface, _: Int ->
+                findNavController().popBackStack()
+                dialog.dismiss()
+            }
+
+            setNegativeButton("No") { dialog: DialogInterface, _: Int ->
+                dialog.dismiss()
+            }
+        }
+            .create()
+            .show()
     }
 
     private fun checkLocationPermissionsApproved(): Boolean {
